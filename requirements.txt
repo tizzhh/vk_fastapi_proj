@@ -1,5 +1,5 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-python-dotenv
-asyncpg
+fastapi==0.110.2
+uvicorn==0.29.0
+SQLAlchemy==2.0.29
+python-dotenv==1.0.1
+asyncpg==0.29.0

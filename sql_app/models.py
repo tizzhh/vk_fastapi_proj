@@ -6,7 +6,13 @@ from .database import Base
 
 
 class User(Base):
-    __tablename__ = "users"
+    '''
+    SQLAlchemy table for users.
+
+    'created_at' field is set upon creation.
+    '''
+
+    __tablename__ = "user"
 
     id = Column(Integer, primary_key=True)
     created_at = Column(TIMESTAMP, default=datetime.datetime.now)

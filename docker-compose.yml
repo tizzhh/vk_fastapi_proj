@@ -13,8 +13,8 @@ services:
   postgres-db:
     image: postgres:14.11
     environment:
-      POSTGRES_DB: botfarm
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5433:5432"

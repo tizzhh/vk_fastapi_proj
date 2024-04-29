@@ -4,7 +4,7 @@ from typing import Union
 
 import bcrypt
 from sqlalchemy import select
-from sqlalchemy.exc import IntegrityError, NoResultFound
+from sqlalchemy.exc import NoResultFound
 
 from . import models, schemas
 from .database import AsyncSession
@@ -90,9 +90,7 @@ async def create_admin(
     '''
     db_admin = models.Admin(
         login=admin.login,
-        password=bcrypt.hashpw(
-            admin.password.encode('utf-8'), bcrypt.gensalt()
-        ),
+        password=bcrypt.hashpw(admin.password, bcrypt.gensalt()),
     )
     session.add(db_admin)
     await session.commit()

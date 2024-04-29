@@ -6,4 +6,4 @@ asyncpg==0.29.0
 alembic==1.13.1
 bcrypt==4.1.2
 python_jose==3.3.0
-python-multipart
+python-multipart==0.0.9

@@ -5,7 +5,6 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from jose import JWTError
 
 from api_security import jwt_passwords
 from sql_app import crud, schemas

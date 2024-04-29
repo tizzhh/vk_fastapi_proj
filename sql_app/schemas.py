@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal, Union
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, FutureDatetime
 
@@ -11,7 +11,7 @@ class UserBase(BaseModel):
     project_id: int
     env: Literal['prod', 'preprod', 'stage']
     domain: Literal['canary', 'regular']
-    locktime: Union[None, FutureDatetime] = None
+    locktime: Optional[FutureDatetime] = None
     # Since this is a botfarm, we don't really care about
     # serving passwords on get I suppose.
     password: str
@@ -20,7 +20,7 @@ class UserBase(BaseModel):
 class UserLockTime(BaseModel):
     '''Pydantic user model for setting the locktime.'''
 
-    locktime: Union[None, FutureDatetime] = None
+    locktime: Optional[FutureDatetime] = None
 
 
 class UserCreate(UserBase):

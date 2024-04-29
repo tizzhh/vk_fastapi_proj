@@ -14,7 +14,7 @@ async def get_session():
         yield session
 
 
-@app.get("/users", response_model=list[schemas.User])
+@app.get('/users', response_model=list[schemas.User])
 async def get_user(
     session: AsyncSession = Depends(get_session),
 ) -> list[schemas.User]:
@@ -33,13 +33,14 @@ async def get_user(
             env=u.env,
             domain=u.domain,
             project_id=u.project_id,
+            password=u.password,
         )
         for u in users
     ]
 
 
 @app.post(
-    "/users", response_model=schemas.User, status_code=HTTPStatus.CREATED
+    '/users', response_model=schemas.User, status_code=HTTPStatus.CREATED
 )
 async def create_user(
     user: schemas.UserCreate, session: AsyncSession = Depends(get_session)
@@ -50,11 +51,18 @@ async def create_user(
 
     Returns created user's data.
     '''
-    user = await crud.create_user(session, user)
+    try:
+        user = await crud.create_user(session, user)
+    except crud.IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=f'user with login: {user.login} already exists',
+        )
     return user
 
 
-@app.patch("/users/{id}/acquire_lock", response_model=schemas.User)
+@app.patch('/users/{id}/acquire_lock', response_model=schemas.User)
 async def acquire_lock(
     locktime: schemas.UserLockTime,
     id: int,
@@ -73,10 +81,12 @@ async def acquire_lock(
             id=id,
         )
     except crud.NoResultFound:
+        await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.NOT_FOUND, detail='user not found'
         )
     except ValueError:
+        await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
             detail=f'user with id: {id} is already occupied',
@@ -84,7 +94,7 @@ async def acquire_lock(
     return user
 
 
-@app.patch("/users/{id}/release_lock")
+@app.patch('/users/{id}/release_lock')
 async def release_lock(
     id: int, session: AsyncSession = Depends(get_session)
 ) -> schemas.User:

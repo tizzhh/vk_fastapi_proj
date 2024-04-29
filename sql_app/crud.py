@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Union
 
 from sqlalchemy import select
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from . import models, schemas
 from .database import AsyncSession

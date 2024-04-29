@@ -12,6 +12,9 @@ class UserBase(BaseModel):
     env: Literal['prod', 'preprod', 'stage']
     domain: Literal['canary', 'regular']
     locktime: Union[None, FutureDatetime] = None
+    # Since this is a botfarm, we don't really care about
+    # serving passwords on get I suppose.
+    password: str
 
 
 class UserLockTime(BaseModel):
@@ -23,7 +26,7 @@ class UserLockTime(BaseModel):
 class UserCreate(UserBase):
     '''Pydantic user model for POST method.'''
 
-    password: str
+    pass
 
 
 class User(UserBase):

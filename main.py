@@ -1,32 +1,26 @@
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 from http import HTTPStatus
-from typing import Annotated, Union
+from typing import Annotated
 
-import bcrypt
 from fastapi import Depends, FastAPI, HTTPException
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from jose import JWTError, jwt
+from fastapi.security import OAuth2PasswordRequestForm
+from jose import JWTError
 
+from api_security import jwt_passwords
 from sql_app import crud, schemas
-from sql_app.database import AsyncSession, async_session
-
-SECRET_KEY = '5595372758f1d8efac554dbadfa2afeff9068e953e693a27e2806d192459bc31'
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRES_MINS = 60
-DEFAULT_EXPIRE_TIME = 30
+from sql_app.database import AsyncSession, get_session
 
 app = FastAPI()
 
 
-async def get_session():
-    '''Dependency session.'''
-    async with async_session() as session:
-        yield session
-
-
-@app.get('/users', response_model=list[schemas.User])
+@app.get(
+    '/users',
+    response_model=list[schemas.User],
+    dependencies=[Depends(jwt_passwords.check_jwt_token)],
+)
 async def get_user(
+    # token: None = Depends(api_security.check_jwt_token),
     session: AsyncSession = Depends(get_session),
 ) -> list[schemas.User]:
     '''
@@ -51,7 +45,10 @@ async def get_user(
 
 
 @app.post(
-    '/users', response_model=schemas.User, status_code=HTTPStatus.CREATED
+    '/users',
+    response_model=schemas.User,
+    status_code=HTTPStatus.CREATED,
+    dependencies=[Depends(jwt_passwords.check_jwt_token)],
 )
 async def create_user(
     user: schemas.UserCreate, session: AsyncSession = Depends(get_session)
@@ -76,7 +73,11 @@ async def create_user(
     return user
 
 
-@app.patch('/users/{id}/acquire_lock', response_model=schemas.User)
+@app.patch(
+    '/users/{id}/acquire_lock',
+    response_model=schemas.User,
+    dependencies=[Depends(jwt_passwords.check_jwt_token)],
+)
 async def acquire_lock(
     locktime: schemas.UserLockTime,
     id: int,
@@ -108,7 +109,10 @@ async def acquire_lock(
     return user
 
 
-@app.patch('/users/{id}/release_lock')
+@app.patch(
+    '/users/{id}/release_lock',
+    dependencies=[Depends(jwt_passwords.check_jwt_token)],
+)
 async def release_lock(
     id: int, session: AsyncSession = Depends(get_session)
 ) -> schemas.User:
@@ -126,7 +130,11 @@ async def release_lock(
     return user
 
 
-@app.post('/admins', status_code=HTTPStatus.CREATED)
+@app.post(
+    '/admins',
+    status_code=HTTPStatus.CREATED,
+    dependencies=[Depends(jwt_passwords.check_jwt_token)],
+)
 async def create_admin(
     admin: schemas.AdminUser, session: AsyncSession = Depends(get_session)
 ) -> schemas.AdminUser:
@@ -178,7 +186,7 @@ async def get_token(
 
     Returns a JWT-token if presented credentials are correct.
     '''
-    admin = await auth_admin(
+    admin = await jwt_passwords.auth_admin(
         session=session,
         username=credentials.username,
         password=credentials.password,
@@ -189,45 +197,10 @@ async def get_token(
             detail=f'incorrect username or password',
             headers={"WWW-Authenticate": "Bearer"},
         )
-    access_token = create_access_token(
+    access_token = jwt_passwords.create_access_token(
         data={'sub': admin.login},
-        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINS),
+        expires_delta=timedelta(
+            minutes=jwt_passwords.ACCESS_TOKEN_EXPIRES_MINS
+        ),
     )
     return schemas.Token(access_token=access_token, token_type='bearer')
-
-
-async def auth_admin(
-    session: AsyncSession, username: str, password: str
-) -> schemas.AdminUser:
-    '''Function that checks whether or not a user is an admin based on presented login and password.'''
-    admin = await crud.get_user_admin(
-        session=session,
-        type=crud.QueryTypes.ADMIN,
-        login=username,
-    )
-    if admin is None:
-        return False
-    if not verify_password(password, admin.password):
-        return False
-    return admin
-
-
-def verify_password(password: str, hashed_pass: bytes) -> bool:
-    '''Function that verifies password.'''
-    return bcrypt.checkpw(password.encode('utf-8'), hashed_pass)
-
-
-def create_access_token(
-    data: dict, expires_delta: Union[timedelta, None]
-) -> str:
-    '''Function that creates a JWT-token.'''
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=DEFAULT_EXPIRE_TIME
-        )
-    to_encode.update({'exp': expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-    return encoded_jwt

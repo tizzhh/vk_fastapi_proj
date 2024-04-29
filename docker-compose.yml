@@ -1,6 +1,7 @@
 version: '3'
 services:
   fastapi-app:
+    build: .
     image: fastapi-app
     ports:
       - "8080:8080"
@@ -8,7 +9,7 @@ services:
       - postgres-db
   
   postgres-db:
-    image: postgres:13
+    image: postgres:14.11
     environment:
       POSTGRES_DB: botfarm
       POSTGRES_USER: admin

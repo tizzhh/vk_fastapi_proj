@@ -3,15 +3,15 @@ from http import HTTPStatus
 from fastapi import Depends, FastAPI, HTTPException
 
 from sql_app import crud, schemas
-from sql_app.database import AsyncSession, async_session, init_db
+from sql_app.database import AsyncSession, async_session
 
 app = FastAPI()
 
 
-# change this garbage to alembic
-@app.on_event("startup")
-async def on_startup():
-    await init_db()
+# # change this garbage to alembic
+# @app.on_event("startup")
+# async def on_startup():
+#     await init_db()
 
 
 async def get_session():

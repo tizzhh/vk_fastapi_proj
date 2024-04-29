@@ -1,0 +1,20 @@
+version: '3'
+services:
+  fastapi-app:
+    build:
+      context: .
+      dockerfile: fastapi.Dockerfile
+    image: fastapi-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres-db
+  
+  postgres-db:
+    image: postgres:14.11
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "5433:5432"

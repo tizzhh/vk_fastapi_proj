@@ -36,7 +36,7 @@ async def get_users(session: AsyncSession) -> list[models.User]:
 
     A list of users is returned.
     '''
-    users = await session.execute(select(models.User))
+    users = await session.execute(select(models.User).order_by(models.User.id))
     users = users.scalars().all()
     return users
 

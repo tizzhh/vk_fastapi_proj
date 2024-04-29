@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Union
 
-from pydantic import BaseModel, FutureDatetime
+from pydantic import BaseModel, ConfigDict, FutureDatetime
 
 
 class UserBase(BaseModel):
@@ -29,8 +29,7 @@ class UserCreate(UserBase):
 class User(UserBase):
     '''Pydantic user model for GET method.'''
 
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     created_at: datetime
-
-    class Config:
-        orm_mode = True

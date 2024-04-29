@@ -1,7 +1,9 @@
 version: '3'
 services:
   fastapi-app:
-    build: .
+    build:
+      context: .
+      dockerfile: fastapi.Dockerfile
     image: fastapi-app
     ports:
       - "8080:8080"

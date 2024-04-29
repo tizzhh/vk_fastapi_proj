@@ -8,12 +8,6 @@ from sql_app.database import AsyncSession, async_session
 app = FastAPI()
 
 
-# # change this garbage to alembic
-# @app.on_event("startup")
-# async def on_startup():
-#     await init_db()
-
-
 async def get_session():
     '''Dependency session.'''
     async with async_session() as session:

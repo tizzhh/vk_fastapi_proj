@@ -1,3 +1,4 @@
+import os
 from http import HTTPStatus
 
 from fastapi import Depends, FastAPI, HTTPException
@@ -52,7 +53,10 @@ async def create_user(
     Returns created user's data.
     '''
     try:
-        user = await crud.create_user(session, user)
+        user = await crud.create_user(
+            session=session,
+            user=user,
+        )
     except crud.IntegrityError:
         await session.rollback()
         raise HTTPException(
@@ -110,3 +114,43 @@ async def release_lock(
         id=id,
     )
     return user
+
+
+@app.post('/admins', status_code=HTTPStatus.CREATED)
+async def create_admin(
+    admin: schemas.AdminUser, session: AsyncSession = Depends(get_session)
+) -> schemas.AdminUser:
+    '''
+    POST method admin/ enpoint handler.
+    Expects a valid JSON data for sql_app.schemas.AdminUser Pydantic model.
+
+    Returns created admin's data.
+    '''
+    try:
+        admin = await crud.create_admin(
+            session=session,
+            admin=admin,
+        )
+    except crud.IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=f'admin with login: {admin.login} already exists',
+        )
+    return admin
+
+
+# костыль?
+@app.post('/superuser', status_code=HTTPStatus.CREATED)
+async def create_first_admin(
+    session: AsyncSession = Depends(get_session),
+) -> schemas.AdminUser:
+    '''
+    POST method superuser/ endpoint handler.
+    Used for creating a base admin.
+    '''
+    await crud.create_first_admin(
+        session=session,
+        login=os.getenv('ADMIN0LOGIN'),
+        password=os.getenv('ADMIN0PASSWORD'),
+    )

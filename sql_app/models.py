@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import TIMESTAMP, Column, Integer, String
+from sqlalchemy import TIMESTAMP, Column, Integer, LargeBinary, String
 
 from .database import Base
 
@@ -33,4 +33,4 @@ class Admin(Base):
 
     id = Column(Integer, primary_key=True)
     login = Column(String, unique=True)
-    password = Column(String)
+    password = Column(LargeBinary)

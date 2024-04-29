@@ -36,3 +36,8 @@ class User(UserBase):
 
     id: int
     created_at: datetime
+
+
+class AdminUser(BaseModel):
+    login: str
+    password: str

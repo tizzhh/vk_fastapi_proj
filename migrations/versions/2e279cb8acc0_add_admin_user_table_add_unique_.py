@@ -23,7 +23,7 @@ def upgrade() -> None:
         'admin',
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('login', sa.String(), nullable=True),
-        sa.Column('password', sa.String(), nullable=True),
+        sa.Column('password', sa.LargeBinary(), nullable=True),
         sa.PrimaryKeyConstraint('id'),
         sa.UniqueConstraint('login'),
     )

@@ -1,9 +1,9 @@
-from fastapi import Depends, FastAPI
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session
+from http import HTTPStatus
 
-from sql_app import crud, models, schemas
-from sql_app.database import AsyncSession, async_session, engine, init_db
+from fastapi import Depends, FastAPI, HTTPException
+
+from sql_app import crud, schemas
+from sql_app.database import AsyncSession, async_session, init_db
 
 app = FastAPI()
 
@@ -20,14 +20,10 @@ async def get_session():
         yield session
 
 
-# DELETE THIS LATER
-@app.get("/")
-async def root():
-    return {"message": "Hello world!"}
-
-
 @app.get("/users", response_model=list[schemas.User])
-async def get_user(session: AsyncSession = Depends(get_session)) -> list[schemas.User]:
+async def get_user(
+    session: AsyncSession = Depends(get_session),
+) -> list[schemas.User]:
     '''
     GET method users/ enpoint handler.
 
@@ -48,7 +44,9 @@ async def get_user(session: AsyncSession = Depends(get_session)) -> list[schemas
     ]
 
 
-@app.post("/users")
+@app.post(
+    "/users", response_model=schemas.User, status_code=HTTPStatus.CREATED
+)
 async def create_user(
     user: schemas.UserCreate, session: AsyncSession = Depends(get_session)
 ) -> schemas.User:
@@ -59,4 +57,52 @@ async def create_user(
     Returns created user's data.
     '''
     user = await crud.create_user(session, user)
+    return user
+
+
+@app.patch("/users/{id}/acquire_lock", response_model=schemas.User)
+async def acquire_lock(
+    locktime: schemas.UserLockTime,
+    id: int,
+    session: AsyncSession = Depends(get_session),
+) -> schemas.User:
+    '''
+    PATCH method users/{id: int}/acquire_lock enpoint handler.
+    Expects a datetime value for the locktime field and sets that locktime.
+
+    Returns modified user's data.
+    '''
+    try:
+        user = await crud.acquire_release_lock(
+            session=session,
+            locktime=locktime.locktime,
+            id=id,
+        )
+    except crud.NoResultFound:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND, detail='user not found'
+        )
+    except ValueError:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail=f'user with id: {id} is already occupied',
+        )
+    return user
+
+
+@app.patch("/users/{id}/release_lock")
+async def release_lock(
+    id: int, session: AsyncSession = Depends(get_session)
+) -> schemas.User:
+    '''
+    PATCH method users/{id: int}/release_lock enpoint handler.
+    NUlls the locktime for the user.
+
+    Returns modified user's data.
+    '''
+    user = await crud.acquire_release_lock(
+        session=session,
+        locktime=None,
+        id=id,
+    )
     return user

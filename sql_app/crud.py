@@ -1,13 +1,15 @@
 from datetime import datetime
+from typing import Union
 
 from sqlalchemy import select
+from sqlalchemy.exc import NoResultFound
 
 from . import models, schemas
 from .database import AsyncSession
 
 
 async def create_user(
-    db: AsyncSession, user: schemas.UserCreate
+    session: AsyncSession, user: schemas.UserCreate
 ) -> models.User:
     '''
     Creates a user in the database.
@@ -18,20 +20,14 @@ async def create_user(
 
     A created user is returned.
     '''
-    db_user = models.User(
-        login=user.login,
-        password=user.password,
-        env=user.env,
-        domain=user.domain,
-        project_id=user.project_id,
-    )
-    db.add(db_user)
-    await db.commit()
-    await db.refresh(db_user)
+    db_user = models.User(**user.model_dump())
+    session.add(db_user)
+    await session.commit()
+    await session.refresh(db_user)
     return db_user
 
 
-async def get_users(db: AsyncSession) -> list[models.User]:
+async def get_users(session: AsyncSession) -> list[models.User]:
     '''
     Gets all users from the database.
 
@@ -40,28 +36,33 @@ async def get_users(db: AsyncSession) -> list[models.User]:
 
     A list of users is returned.
     '''
-    result = await db.execute(select(models.User))
-    result = result.scalars().all()
-    return result
+    users = await session.execute(select(models.User))
+    users = users.scalars().all()
+    return users
 
 
-async def acquire_lock(db: AsyncSession, locktime: datetime, id: int):
-    db_user = await db.execute(
+async def acquire_release_lock(
+    session: AsyncSession, locktime: Union[datetime, None], id: int
+) -> models.User:
+    '''
+    Sets user's locktime to a datetime or a null value.
+
+    Arguments:
+        - AsyncSession instance.
+        - Locktime: datetime or null.
+        - id: User's id.
+
+    User with specified id and modified locktime is returned.
+    '''
+    db_user = await session.execute(
         select(models.User).filter(models.User.id == id)
     )
-    db_user = db_user.first()
+    db_user = db_user.scalar_one()
+    if db_user is None:
+        raise NoResultFound
+    if db_user.locktime is not None and locktime is not None:
+        raise ValueError
     db_user.locktime = locktime
-    await db.commit()
-    await db.refresh(db_user)
-    return db_user
-
-
-async def release_lock(db: AsyncSession, id: int):
-    db_user = await db.execute(
-        select(models.User).filter(models.User.id == id)
-    )
-    db_user = db_user.first()
-    db_user.locktime = None
-    await db.commit()
-    await db.refresh(db_user)
+    await session.commit()
+    await session.refresh(db_user)
     return db_user

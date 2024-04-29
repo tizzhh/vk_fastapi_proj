@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Literal, Union
 
-from pydantic import BaseModel
+from pydantic import BaseModel, FutureDatetime
 
 
 class UserBase(BaseModel):
@@ -11,13 +11,19 @@ class UserBase(BaseModel):
     project_id: int
     env: Literal['prod', 'preprod', 'stage']
     domain: Literal['canary', 'regular']
+    locktime: Union[None, FutureDatetime] = None
+
+
+class UserLockTime(BaseModel):
+    '''Pydantic user model for setting the locktime.'''
+
+    locktime: Union[None, FutureDatetime] = None
 
 
 class UserCreate(UserBase):
     '''Pydantic user model for POST method.'''
 
     password: str
-    locktime: Union[None, datetime] = None
 
 
 class User(UserBase):

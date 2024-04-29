@@ -1,10 +1,20 @@
 import os
+from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
+from typing import Annotated, Union
 
+import bcrypt
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from jose import JWTError, jwt
 
 from sql_app import crud, schemas
 from sql_app.database import AsyncSession, async_session
+
+SECRET_KEY = '5595372758f1d8efac554dbadfa2afeff9068e953e693a27e2806d192459bc31'
+ALGORITHM = 'HS256'
+ACCESS_TOKEN_EXPIRES_MINS = 60
+DEFAULT_EXPIRE_TIME = 30
 
 app = FastAPI()
 
@@ -149,8 +159,75 @@ async def create_first_admin(
     POST method superuser/ endpoint handler.
     Used for creating a base admin.
     '''
-    await crud.create_first_admin(
+    db_admin0 = await crud.create_first_admin(
         session=session,
         login=os.getenv('ADMIN0LOGIN'),
         password=os.getenv('ADMIN0PASSWORD'),
     )
+    return db_admin0
+
+
+@app.post('/token')
+async def get_token(
+    credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
+    session: AsyncSession = Depends(get_session),
+) -> schemas.Token:
+    '''
+    POST method token/ endpoint handler.
+    Expects login and password.
+
+    Returns a JWT-token if presented credentials are correct.
+    '''
+    admin = await auth_admin(
+        session=session,
+        username=credentials.username,
+        password=credentials.password,
+    )
+    if not admin:
+        raise HTTPException(
+            status_code=HTTPStatus.UNAUTHORIZED,
+            detail=f'incorrect username or password',
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    access_token = create_access_token(
+        data={'sub': admin.login},
+        expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRES_MINS),
+    )
+    return schemas.Token(access_token=access_token, token_type='bearer')
+
+
+async def auth_admin(
+    session: AsyncSession, username: str, password: str
+) -> schemas.AdminUser:
+    '''Function that checks whether or not a user is an admin based on presented login and password.'''
+    admin = await crud.get_user_admin(
+        session=session,
+        type=crud.QueryTypes.ADMIN,
+        login=username,
+    )
+    if admin is None:
+        return False
+    if not verify_password(password, admin.password):
+        return False
+    return admin
+
+
+def verify_password(password: str, hashed_pass: bytes) -> bool:
+    '''Function that verifies password.'''
+    return bcrypt.checkpw(password.encode('utf-8'), hashed_pass)
+
+
+def create_access_token(
+    data: dict, expires_delta: Union[timedelta, None]
+) -> str:
+    '''Function that creates a JWT-token.'''
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(
+            minutes=DEFAULT_EXPIRE_TIME
+        )
+    to_encode.update({'exp': expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt

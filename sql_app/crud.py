@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import Enum
 from typing import Union
 
 import bcrypt
@@ -7,6 +8,11 @@ from sqlalchemy.exc import IntegrityError, NoResultFound
 
 from . import models, schemas
 from .database import AsyncSession
+
+
+class QueryTypes(Enum):
+    USER = 0
+    ADMIN = 1
 
 
 async def create_user(
@@ -55,10 +61,11 @@ async def acquire_release_lock(
 
     User with specified id and modified locktime is returned.
     '''
-    db_user = await session.execute(
-        select(models.User).filter(models.User.id == id)
+    db_user = await get_user_admin(
+        session=session,
+        type=QueryTypes.USER,
+        id=id,
     )
-    db_user = db_user.scalar_one_or_none()
     if db_user is None:
         raise NoResultFound
     if db_user.locktime is not None and locktime is not None:
@@ -96,10 +103,21 @@ async def create_admin(
 async def create_first_admin(
     session: AsyncSession, login: str, password: str
 ) -> models.Admin:
-    db_admin0 = await session.execute(
-        select(models.Admin).filter(models.Admin.login == login)
+    '''
+    Creates a superuser in the database.
+
+    Arguments:
+        - AsyncSession instance.
+        - login
+        - password
+
+    A created admin is returned.
+    '''
+    db_admin0 = await get_user_admin(
+        session=session,
+        type=QueryTypes.ADMIN,
+        login=login,
     )
-    db_admin0 = db_admin0.scalar_one_or_none()
     if db_admin0 is None:
         db_admin0 = models.Admin(
             login=login,
@@ -108,3 +126,33 @@ async def create_first_admin(
         session.add(db_admin0)
         await session.commit()
         await session.refresh(db_admin0)
+    return db_admin0
+
+
+async def get_user_admin(
+    session: AsyncSession,
+    type: int,
+    id: Union[int, None] = None,
+    login: str = None,
+) -> Union[models.User, models.Admin]:
+    ...
+    if type == QueryTypes.ADMIN:
+        if id is not None:
+            user_admin = await session.execute(
+                select(models.Admin).filter(models.Admin.id == id)
+            )
+        elif login is not None:
+            user_admin = await session.execute(
+                select(models.Admin).filter(models.Admin.login == login)
+            )
+    elif type == QueryTypes.USER:
+        if id is not None:
+            user_admin = await session.execute(
+                select(models.User).filter(models.User.id == id)
+            )
+        elif login is not None:
+            user_admin = await session.execute(
+                select(models.User).filter(models.User.login == login)
+            )
+    user_admin = user_admin.scalar_one_or_none()
+    return user_admin

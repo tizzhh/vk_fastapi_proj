@@ -39,5 +39,16 @@ class User(UserBase):
 
 
 class AdminUser(BaseModel):
+    '''Pydantic admin model.'''
+
+    model_config = ConfigDict(from_attributes=True)
+
     login: str
-    password: str
+    password: bytes
+
+
+class Token(BaseModel):
+    '''Pydantic JWT-token model.'''
+
+    access_token: str
+    token_type: str

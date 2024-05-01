@@ -5,6 +5,7 @@ from typing import Annotated
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.exc import IntegrityError
 
 from api_security import jwt_passwords
 from sql_app import crud, schemas
@@ -63,7 +64,7 @@ async def create_user(
             session=session,
             user=user,
         )
-    except crud.IntegrityError:
+    except IntegrityError:
         await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -148,7 +149,7 @@ async def create_admin(
             session=session,
             admin=admin,
         )
-    except crud.IntegrityError:
+    except IntegrityError:
         await session.rollback()
         raise HTTPException(
             status_code=HTTPStatus.BAD_REQUEST,
@@ -174,7 +175,7 @@ async def create_first_admin(
     return db_admin0
 
 
-@app.post('/token')
+@app.post('/token', status_code=HTTPStatus.CREATED)
 async def get_token(
     credentials: Annotated[OAuth2PasswordRequestForm, Depends()],
     session: AsyncSession = Depends(get_session),
@@ -194,7 +195,7 @@ async def get_token(
         raise HTTPException(
             status_code=HTTPStatus.UNAUTHORIZED,
             detail=f'incorrect username or password',
-            headers={"WWW-Authenticate": "Bearer"},
+            headers={'WWW-Authenticate': 'Bearer'},
         )
     access_token = jwt_passwords.create_access_token(
         data={'sub': admin.login},

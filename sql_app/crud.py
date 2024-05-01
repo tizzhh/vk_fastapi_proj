@@ -106,8 +106,8 @@ async def create_first_admin(
 
     Arguments:
         - AsyncSession instance.
-        - login
-        - password
+        - login.
+        - password.
 
     A created admin is returned.
     '''
@@ -133,7 +133,17 @@ async def get_user_admin(
     id: Union[int, None] = None,
     login: str = None,
 ) -> Union[models.User, models.Admin]:
-    ...
+    '''
+    function that queries a single Admin/User instance.
+
+    Arguments:
+        - AsyncSession instance.
+        - type of desired instance (Admin/User).
+        - id.
+        - login.
+
+    Returns an Admin or User instance
+    '''
     if type == QueryTypes.ADMIN:
         if id is not None:
             user_admin = await session.execute(

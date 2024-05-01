@@ -35,7 +35,7 @@ async def check_jwt_token(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    admin = crud.get_user_admin(
+    admin = await crud.get_user_admin(
         session=session, type=crud.QueryTypes.ADMIN, login=username
     )
     if admin is None:

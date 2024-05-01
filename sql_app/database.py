@@ -8,9 +8,9 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 load_dotenv()
 
 # CHANGE BACK TO URL
-DATABASE_URL = os.getenv('URL')
+DATABASE_URL = os.getenv('LOCAL_URL')
 if 'pytest' in sys.modules:
-    DATABASE_URL = os.getenv('TEST_DB')
+    DATABASE_URL = os.getenv('TEST_DB_LOCAL')
 
 engine = create_async_engine(DATABASE_URL)
 async_session = sessionmaker(

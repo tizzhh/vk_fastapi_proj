@@ -5,6 +5,7 @@ from http import HTTPStatus
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from pytest_tests.conftest import ADMIN0_LOGIN
 
 
@@ -83,6 +84,7 @@ async def test_token_wrong_credentials(
     data = {'username': "a", 'password': "a"}
     response_token = await async_client.post('/token', data=data)
     assert response_token.status_code == HTTPStatus.UNAUTHORIZED
+
 
 @pytest.mark.asyncio
 async def test_token_wrong_password(

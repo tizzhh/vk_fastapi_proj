@@ -2,7 +2,10 @@ import json
 import os
 from enum import Enum
 
+import pytest
 import pytest_asyncio
+from alembic import command
+from alembic.config import Config
 from dotenv import load_dotenv
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +25,12 @@ class MethodType(Enum):
     POST = 1
     PUT = 2
     PATCH = 3
+
+
+@pytest.fixture(scope='session')
+def setup_database():
+    alembic_cfg = Config('alembic_tests.ini')
+    command.upgrade(alembic_cfg, 'head')
 
 
 @pytest_asyncio.fixture
@@ -70,7 +79,3 @@ async def create_user(async_client, token):
     await async_client.post(
         '/users', content=data, headers={'Authorization': 'Bearer ' + token}
     )
-
-
-# @pytest_asyncio.fixture(scope='function')
-# async def super_user():

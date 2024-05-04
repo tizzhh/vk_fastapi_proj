@@ -44,8 +44,7 @@ async def get_users(session: AsyncSession) -> list[models.User]:
     A list of users is returned.
     '''
     users = await session.execute(select(models.User).order_by(models.User.id))
-    users = users.scalars().all()
-    return users
+    return users.scalars().all()
 
 
 async def acquire_release_lock(
@@ -106,25 +105,25 @@ async def create_first_admin(
 
     Arguments:
         - AsyncSession instance.
-        - login
-        - password
+        - login.
+        - password.
 
     A created admin is returned.
     '''
-    db_admin0 = await get_user_admin(
+    first_db_admin = await get_user_admin(
         session=session,
         type=QueryTypes.ADMIN,
         login=login,
     )
-    if db_admin0 is None:
-        db_admin0 = models.Admin(
+    if first_db_admin is None:
+        first_db_admin = models.Admin(
             login=login,
             password=bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()),
         )
-        session.add(db_admin0)
+        session.add(first_db_admin)
         await session.commit()
-        await session.refresh(db_admin0)
-    return db_admin0
+        await session.refresh(first_db_admin)
+    return first_db_admin
 
 
 async def get_user_admin(
@@ -133,7 +132,17 @@ async def get_user_admin(
     id: Union[int, None] = None,
     login: str = None,
 ) -> Union[models.User, models.Admin]:
-    ...
+    '''
+    function that queries a single Admin/User instance.
+
+    Arguments:
+        - AsyncSession instance.
+        - type of desired instance (Admin/User).
+        - id.
+        - login.
+
+    Returns an Admin or User instance
+    '''
     if type == QueryTypes.ADMIN:
         if id is not None:
             user_admin = await session.execute(
@@ -152,5 +161,4 @@ async def get_user_admin(
             user_admin = await session.execute(
                 select(models.User).filter(models.User.login == login)
             )
-    user_admin = user_admin.scalar_one_or_none()
-    return user_admin
+    return user_admin.scalar_one_or_none()

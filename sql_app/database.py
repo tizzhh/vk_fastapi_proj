@@ -1,15 +1,17 @@
 import os
+import sys
 
 from dotenv import load_dotenv
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 load_dotenv()
 
-DATABASE_URL = os.getenv('URL')
+DATABASE_URL = os.getenv('DB_URL')
+if 'pytest' in sys.modules:
+    DATABASE_URL = os.getenv('TEST_DB_URL')
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL)
 async_session = sessionmaker(
     bind=engine, expire_on_commit=False, class_=AsyncSession
 )

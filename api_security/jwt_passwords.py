@@ -1,8 +1,10 @@
+import os
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Annotated, Union
 
 import bcrypt
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -10,12 +12,14 @@ from jose import JWTError, jwt
 from sql_app import crud, schemas
 from sql_app.database import AsyncSession, get_session
 
-SECRET_KEY = '5595372758f1d8efac554dbadfa2afeff9068e953e693a27e2806d192459bc31'
+load_dotenv()
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRES_MINS = 60
 DEFAULT_EXPIRE_TIME = 30
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl='token')
 
 
 async def check_jwt_token(
@@ -25,17 +29,17 @@ async def check_jwt_token(
     '''Function checks whether or not the token is valid.'''
     credentials_exception = HTTPException(
         status_code=HTTPStatus.UNAUTHORIZED,
-        detail="could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
+        detail='could not validate credentials',
+        headers={'WWW-Authenticate': 'Bearer'},
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
+        username: str = payload.get('sub')
         if username is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    admin = crud.get_user_admin(
+    admin = await crud.get_user_admin(
         session=session, type=crud.QueryTypes.ADMIN, login=username
     )
     if admin is None:

@@ -17,9 +17,9 @@ load_dotenv()
 # access to the values within the .ini file in use.
 config = context.config
 
-config.set_main_option('sqlalchemy.url', os.getenv('URL'))
+config.set_main_option('sqlalchemy.url', os.getenv('DB_URL'))
 if 'pytest' in sys.modules:
-    config.set_main_option('sqlalchemy.url', os.getenv('TEST_URL'))
+    config.set_main_option('sqlalchemy.url', os.getenv('TEST_DB_URL'))
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.

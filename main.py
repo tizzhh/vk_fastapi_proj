@@ -3,15 +3,51 @@ from datetime import timedelta
 from http import HTTPStatus
 from typing import Annotated
 
+from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi_healthchecks.api.router import HealthcheckRouter, Probe
+from fastapi_healthchecks.checks.postgres import PostgreSqlCheck
+from fastapi_healthchecks.checks.settings import SettingsCheck
 from sqlalchemy.exc import IntegrityError
 
 from api_security import jwt_passwords
+from health_checks import AmIAlive, IsSuperuserEndpointAlive
 from sql_app import crud, schemas
 from sql_app.database import AsyncSession, get_session
+from sql_app.models import Admin, User
+
+load_dotenv()
 
 app = FastAPI()
+app.include_router(
+    HealthcheckRouter(
+        Probe(
+            name='readiness',
+            checks=(
+                PostgreSqlCheck(
+                    username=os.getenv('POSTGRES_USER'),
+                    password=os.getenv('POSTGRES_PASSWORD'),
+                    database=os.getenv('POSTGRES_DB'),
+                    host=os.getenv('POSTGRES_HOST'),
+                ),
+            ),
+        ),
+        Probe(
+            name='liveness',
+            checks=(
+                SettingsCheck(name='User', settings_class=User),
+                SettingsCheck(name='Admin', settings_class=Admin),
+                IsSuperuserEndpointAlive(app=app),
+            ),
+        ),
+        Probe(
+            name='startup',
+            checks=(AmIAlive(),),
+        ),
+    ),
+    prefix='/health',
+)
 
 
 @app.get(

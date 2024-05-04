@@ -16,8 +16,8 @@ from sql_app.database import Base, engine
 
 load_dotenv()
 
-ADMIN0_LOGIN = os.getenv('ADMIN0LOGIN')
-ADMIN0_PASSWORD = os.getenv('ADMIN0PASSWORD')
+FIRST_DB_ADMIN_LOGIN = os.getenv('FIRST_DB_ADMIN_LOGIN')
+FIRST_DB_ADMIN_PASSWORD = os.getenv('FIRST_DB_ADMIN_PASSWORD')
 
 
 class MethodType(Enum):
@@ -61,7 +61,10 @@ async def async_session():
 @pytest_asyncio.fixture(scope='function')
 async def token(async_client):
     reponse = await async_client.post('/superuser')
-    data = {'username': ADMIN0_LOGIN, 'password': ADMIN0_PASSWORD}
+    data = {
+        'username': FIRST_DB_ADMIN_LOGIN,
+        'password': FIRST_DB_ADMIN_PASSWORD,
+    }
     reponse = await async_client.post('/token', data=data)
     return reponse.json()['access_token']
 

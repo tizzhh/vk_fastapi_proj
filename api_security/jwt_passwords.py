@@ -1,8 +1,10 @@
+import os
 from datetime import datetime, timedelta, timezone
 from http import HTTPStatus
 from typing import Annotated, Union
 
 import bcrypt
+from dotenv import load_dotenv
 from fastapi import Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -10,7 +12,9 @@ from jose import JWTError, jwt
 from sql_app import crud, schemas
 from sql_app.database import AsyncSession, get_session
 
-SECRET_KEY = '5595372758f1d8efac554dbadfa2afeff9068e953e693a27e2806d192459bc31'
+load_dotenv()
+
+SECRET_KEY = os.getenv('SECRET_KEY')
 ALGORITHM = 'HS256'
 ACCESS_TOKEN_EXPIRES_MINS = 60
 DEFAULT_EXPIRE_TIME = 30

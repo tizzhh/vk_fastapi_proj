@@ -5,7 +5,11 @@ import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pytest_tests.conftest import ADMIN0_LOGIN, ADMIN0_PASSWORD, MethodType
+from pytest_tests.conftest import (
+    FIRST_DB_ADMIN_LOGIN,
+    FIRST_DB_ADMIN_PASSWORD,
+    MethodType,
+)
 
 URLS_METHOD_TYPES = {
     'users': MethodType.GET,
@@ -142,6 +146,9 @@ async def test_token_availability(
     async_session: AsyncSession,
 ):
     await async_client.post('/superuser')
-    data = {'username': ADMIN0_LOGIN, 'password': ADMIN0_PASSWORD}
+    data = {
+        'username': FIRST_DB_ADMIN_LOGIN,
+        'password': FIRST_DB_ADMIN_PASSWORD,
+    }
     response_token = await async_client.post('/token', data=data)
     assert response_token.status_code == HTTPStatus.CREATED

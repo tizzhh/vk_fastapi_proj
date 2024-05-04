@@ -2,33 +2,11 @@ import json
 from datetime import datetime, timedelta
 from http import HTTPStatus
 
-import bcrypt
 import pytest
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from pytest_tests.conftest import ADMIN0_LOGIN, ADMIN0_PASSWORD
-
-# from pytest_tests.conftest import MethodType
-
-
-# @pytest.mark.parametrize(
-#     'method_type, status_code'
-#     [
-#         (
-#             MethodType.GET,
-#             HTTPStatus.OK,
-#         ),
-#         (
-#             MethodType.POST,
-#             HTTPStatus.CREATED,
-#         )
-#     ],
-# )
-# @pytest.mark.asyncio
-# async def test_users_create_retrieve(
-
-# )
+from pytest_tests.conftest import FIRST_DB_ADMIN_LOGIN
 
 EXPECTED_RESPONSE_USERS_CREATE_RETRIEVE = {
     'login': 'aboba',
@@ -52,8 +30,7 @@ async def test_superuser_create(
     response_body = response.json()
     assert 'login' in response_body
     assert 'password' in response_body
-    assert response_body['login'] == ADMIN0_LOGIN
-    # assert bcrypt.checkpw(bytes(response_body['password'].encode('utf-8').hex(), 'utf-8'), ADMIN0_PASSWORD.encode('utf-8'))
+    assert response_body['login'] == FIRST_DB_ADMIN_LOGIN
 
 
 @pytest.mark.asyncio

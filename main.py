@@ -56,7 +56,6 @@ app.include_router(
     dependencies=[Depends(jwt_passwords.check_jwt_token)],
 )
 async def get_user(
-    # token: None = Depends(api_security.check_jwt_token),
     session: AsyncSession = Depends(get_session),
 ) -> list[schemas.User]:
     '''
@@ -203,12 +202,12 @@ async def create_first_admin(
     POST method superuser/ endpoint handler.
     Used for creating a base admin.
     '''
-    db_admin0 = await crud.create_first_admin(
+    first_db_admin = await crud.create_first_admin(
         session=session,
-        login=os.getenv('ADMIN0LOGIN'),
-        password=os.getenv('ADMIN0PASSWORD'),
+        login=os.getenv('FIRST_DB_ADMIN_LOGIN'),
+        password=os.getenv('FIRST_DB_ADMIN_PASSWORD'),
     )
-    return db_admin0
+    return first_db_admin
 
 
 @app.post('/token', status_code=HTTPStatus.CREATED)
